@@ -3,10 +3,11 @@ StepWise.IO.Piplines
 
 This project contains useful pipeline wrappers and utilities.
 
+## Getting Started
+
 ```
 dotnet add package StepWise.IO.Pipelines
 ```
-
 
 ### HashPipe
 

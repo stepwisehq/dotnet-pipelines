@@ -9,11 +9,11 @@
     <Authors>ProTip</Authors>
     <Company>StepWise</Company>
     <Description>System.IO.Pipeline utilities</Description>
-    <PackageProjectUrl>https://github.com/stepwisehq/prosemirror-dotnet</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/stepwisehq/prosemirror-dotnet.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/stepwisehq/dotnet-pipelines</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/stepwisehq/dotnet-pipelines.git</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>etag,pipelines</PackageTags>
+    <PackageTags>etag,pipelines,hash</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
