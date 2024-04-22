@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 
 namespace StepWise.IO.Pipelines;
 
+
 public class HashPipeReader : PipeReader {
     private readonly PipeReader _reader;
     private readonly IncrementalHash _hasher;
@@ -23,16 +24,22 @@ public class HashPipeReader : PipeReader {
         return result;
     }
 
+    public override void AdvanceTo(SequencePosition consumed) => AdvanceTo(consumed, consumed);
+
     public override void AdvanceTo(SequencePosition consumed, SequencePosition examined) {
         if (_mem == null) throw new InvalidOperationException("ReadAsync must be called before AdvanceTo");
 
+        var buffer = _mem.Value;
+
         if (_mem.Value.IsSingleSegment) {
             // For a single segement sequence we can avoid a copy by slicing the underlying span
-            var bytes = _mem.Value.FirstSpan[..(int)_mem.Value.GetOffset(examined)];
+            var bytes = buffer.FirstSpan[..(int)buffer.GetOffset(examined)];
             _hasher.AppendData(bytes);
         } else {
-            // For multi-segment sequences we need to combine the data anyway for the hasher
-            _hasher.AppendData(_mem.Value.Slice(0, (int)_mem.Value.GetOffset(examined)).ToArray());
+            var sliced = buffer.Slice(0, examined);
+            foreach (var segment in sliced) {
+                _hasher.AppendData(segment.Span);
+            }
         }
         _mem = null;
 
@@ -44,8 +51,6 @@ public class HashPipeReader : PipeReader {
         if (success) _hasher.AppendData(result.Buffer.ToArray());
         return success;
     }
-
-    public override void AdvanceTo(SequencePosition consumed) => _reader.AdvanceTo(consumed);
 
     public override void CancelPendingRead() => _reader.CancelPendingRead();
 
@@ -84,7 +89,7 @@ public class HashPipeWriter : PipeWriter {
         ReadOnlyMemory<byte> source, CancellationToken cancellationToken = default)
     {
         var result = await _writer.WriteAsync(source, cancellationToken);
-        _hasher.AppendData(source.ToArray());
+        _hasher.AppendData(source.Span);
         return result;
     }
 
@@ -97,6 +102,6 @@ public class HashPipeWriter : PipeWriter {
 }
 
 public static class PipelineExtensions {
-    public static HashPipeReader HashPipe(this PipeReader reader, HashAlgorithmName algo) => new HashPipeReader(reader, algo);
-    public static HashPipeWriter HashPipe(this PipeWriter writer, HashAlgorithmName algo) => new HashPipeWriter(writer, algo);
+    public static HashPipeReader AsHashPipe(this PipeReader reader, HashAlgorithmName algo) => new HashPipeReader(reader, algo);
+    public static HashPipeWriter AsHashPipe(this PipeWriter writer, HashAlgorithmName algo) => new HashPipeWriter(writer, algo);
 }

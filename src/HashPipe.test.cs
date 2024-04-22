@@ -6,10 +6,11 @@ using Xunit;
 namespace StepWise.IO.Pipelines.Test;
 
 public class HashPipeTest {
+
     [Theory]
     [InlineData(512)] // Hits single segment path in AdvanceTo
     [InlineData(4098)] // Hits multiple segment path in AdvanceTo
-    public async void HashValueMatchesExpected(int size) {
+    public async void ComputesCorrectHashes(int size) {
         var buffer = new byte[size];
         var rnd = new Random();
         rnd.NextBytes(buffer);
@@ -17,14 +18,20 @@ public class HashPipeTest {
         var expected = Convert.ToHexString(SHA256.Create().ComputeHash(buffer));
 
         var pipe = new Pipe();
-        pipe.Writer.Write(buffer);
-        await pipe.Writer.FlushAsync();
+        var writer = pipe.Writer.AsHashPipe(HashAlgorithmName.SHA256);
+        var writeStream = writer.AsStream();
+        var reader = pipe.Reader.AsHashPipe(HashAlgorithmName.SHA256);
+        var streamReader = new StreamReader(reader.AsStream());
 
-        var hashPipe = pipe.Reader.HashPipe(HashAlgorithmName.SHA256);
-        var result = await hashPipe.ReadAtLeastAsync(size);
-        hashPipe.AdvanceTo(result.Buffer.End, result.Buffer.End);
-        string hash = Convert.ToHexString(hashPipe.GetHash());
+        await writeStream.WriteAsync(buffer);
+        await writeStream.FlushAsync();
+        writeStream.Close();
+        string writerHash = Convert.ToHexString(writer.GetHash());
 
-        Assert.Equal(expected, hash);
+        await streamReader.ReadToEndAsync();
+        string readerHash = Convert.ToHexString(reader.GetHash());
+
+        Assert.Equal(expected, writerHash);
+        Assert.Equal(expected, readerHash);
     }
 }

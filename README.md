@@ -13,6 +13,8 @@ dotnet add package StepWise.IO.Pipelines
 
 `HashPipeReader` and `HashPipeWriter` compute incremental hash sums on the data passing through the wrapped pipe.
 
+`HashPipeReader` incrementally computes the hash on _examined_ data.
+
 This can be useful for computing etags or other data fingerprints.
 
 ```csharp
@@ -24,7 +26,9 @@ var pipe = new Pipe();
 pipe.Writer.Write(buffer);
 await pipe.Writer.FlushAsync();
 
+// ♫ I've got my hash pipe ♫
 var hashPipe = pipe.Reader.HashPipe(HashAlgorithmName.SHA256);
+
 var result = await hashPipe.ReadAtLeastAsync(size);
 hashPipe.AdvanceTo(result.Buffer.End, result.Buffer.End);
 
